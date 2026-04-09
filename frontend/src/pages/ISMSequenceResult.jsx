@@ -646,132 +646,129 @@ return {
 </Section>
 
 <Section title="10. Digraph (Visual)">
-  <div style={{ display: "flex", justifyContent: "center" }}>
-    <svg width={600} height={420} style={{ background: "#fff" }}>
+  <div style={{ display: "flex", justifyContent: "center", overflowX: "auto" }}>
 
-      {/* ===== LEVEL GROUPING ===== */}
-      {(() => {
+    {(() => {
 
-        const levelMap = {};
+      const levelMap = {};
 
-        sortedIndices.forEach((node) => {
-          const lvl = elementLevels[node];
-          if (!levelMap[lvl]) levelMap[lvl] = [];
-          levelMap[lvl].push(node);
+      sortedIndices.forEach((node) => {
+        const lvl = elementLevels[node];
+        if (!levelMap[lvl]) levelMap[lvl] = [];
+        levelMap[lvl].push(node);
+      });
+
+      const levels = Object.keys(levelMap).sort((a, b) => a - b);
+
+      const heightGap = 100;
+      const dynamicHeight = (levels.length + 1) * heightGap;
+      const width = 600;
+
+      let positions = {};
+
+      levels.forEach((lvl, idx) => {
+        const nodes = levelMap[lvl];
+
+        const gap = width / (nodes.length + 1);
+        const y = (idx + 1) * heightGap;
+
+        nodes.forEach((node, i) => {
+          positions[node] = {
+            x: gap * (i + 1),
+            y: y
+          };
         });
+      });
 
-        const levels = Object.keys(levelMap).sort((a, b) => a - b);
+      return (
+        <svg width="100%" height={dynamicHeight} style={{ background: "#fff" }}>
 
-        const heightGap = 80;
-        const width = 600;
+          {/* LEVEL LINES */}
+          {levels.map((lvl, idx) => {
+            const y = (idx + 1) * heightGap;
 
-        let positions = {};
-
-        levels.forEach((lvl, idx) => {
-          const nodes = levelMap[lvl];
-
-          const gap = width / (nodes.length + 1);
-          const y = (idx + 1) * heightGap;
-
-          nodes.forEach((node, i) => {
-            positions[node] = {
-              x: gap * (i + 1),
-              y: y
-            };
-          });
-        });
-
-        return (
-          <>
-            {/* ===== LEVEL LINES ===== */}
-            {levels.map((lvl, idx) => {
-              const y = (idx + 1) * heightGap;
-
-              return (
-                <g key={lvl}>
-                  <line
-                    x1="0"
-                    y1={y}
-                    x2="600"
-                    y2={y}
-                    stroke="#94a3b8"
-                    strokeDasharray="5,5"
-                  />
-                  <text x="10" y={y - 5} fontSize="12">
-                    Level {lvl}
-                  </text>
-                </g>
-              );
-            })}
-
-            {/* ===== ARROW MARKER ===== */}
-            <defs>
-              <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto">
-                <path d="M0,0 L10,3 L0,6 Z" fill="#334155" />
-              </marker>
-            </defs>
-
-            {/* ===== EDGES ===== */}
-            {digraph.map((d, i) => {
-
-              const fromIndex = rules.indexOf(d.from);
-              const toIndex = rules.indexOf(d.to);
-
-              const from = positions[fromIndex];
-              const to = positions[toIndex];
-
-              if (!from || !to) return null;
-
-              return (
+            return (
+              <g key={lvl}>
                 <line
-                  key={i}
-                  x1={from.x}
-                  y1={from.y}
-                  x2={to.x}
-                  y2={to.y}
-                  stroke="#334155"
-                  strokeWidth="1.5"
-                  markerEnd="url(#arrow)"
+                  x1="0"
+                  y1={y}
+                  x2={width}
+                  y2={y}
+                  stroke="#94a3b8"
+                  strokeDasharray="5,5"
                 />
-              );
-            })}
+                <text x="10" y={y - 5} fontSize="12">
+                  Level {lvl}
+                </text>
+              </g>
+            );
+          })}
 
-            {/* ===== NODES ===== */}
-            {sortedIndices.map((node, i) => {
-              const pos = positions[node];
+          {/* ARROW MARKER */}
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto">
+              <path d="M0,0 L10,3 L0,6 Z" fill="#334155" />
+            </marker>
+          </defs>
 
-              return (
-                <g key={i}>
-                  <rect
-                    x={pos.x - 30}
-                    y={pos.y - 20}
-                    width="60"
-                    height="35"
-                    rx="8"
-                    fill="#e0f2fe"
-                    stroke="#0284c7"
-                  />
-                  <text
-                    x={pos.x}
-                    y={pos.y + 5}
-                    textAnchor="middle"
-                    fontSize="12"
-                    fontWeight="bold"
-                  >
-                    {rules[node]}
-                  </text>
-                </g>
-              );
-            })}
+          {/* EDGES */}
+          {digraph.map((d, i) => {
+            const fromIndex = rules.indexOf(d.from);
+            const toIndex = rules.indexOf(d.to);
 
-          </>
-        );
-      })()}
+            const from = positions[fromIndex];
+            const to = positions[toIndex];
 
-    </svg>
+            if (!from || !to) return null;
+
+            return (
+              <line
+                key={i}
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+                stroke="#334155"
+                strokeWidth="1.5"
+                markerEnd="url(#arrow)"
+              />
+            );
+          })}
+
+          {/* NODES */}
+          {sortedIndices.map((node, i) => {
+            const pos = positions[node];
+
+            return (
+              <g key={i}>
+                <rect
+                  x={pos.x - 30}
+                  y={pos.y - 20}
+                  width="60"
+                  height="35"
+                  rx="8"
+                  fill="#e0f2fe"
+                  stroke="#0284c7"
+                />
+                <text
+                  x={pos.x}
+                  y={pos.y + 5}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fontWeight="bold"
+                >
+                  {rules[node]}
+                </text>
+              </g>
+            );
+          })}
+
+        </svg>
+      );
+    })()}
+
   </div>
-</Section>
-    </div>
+</Section>    </div>
   );
 }
 

@@ -20,7 +20,67 @@ export default function SmartISMResult() {
   }
 
   const variables = grid?.slice(1)?.map((row) => row[0]) || [];
+const frm = result?.frm;
 
+let rcm = [];
+let sortedIndices = [];
+
+if (frm) {
+  const n = frm.length;
+
+  function calculateLevels(matrix) {
+    let remaining = [...Array(n).keys()];
+    let levels = Array(n).fill(0);
+    let level = 1;
+
+    while (remaining.length > 0) {
+      let found = [];
+
+      for (let i of remaining) {
+        const reach = remaining.filter(j => matrix[i][j] === 1);
+        const ante = remaining.filter(j => matrix[j][i] === 1);
+
+        const intersection = reach.filter(x => ante.includes(x));
+
+        if (
+          reach.length === intersection.length &&
+          reach.every(x => intersection.includes(x))
+        ) {
+          found.push(i);
+        }
+      }
+
+      if (found.length === 0) found = [...remaining];
+
+      found.forEach(f => levels[f] = level);
+      remaining = remaining.filter(x => !found.includes(x));
+      level++;
+    }
+
+    return levels;
+  }
+
+  const levels = calculateLevels(frm);
+
+  sortedIndices = [...Array(n).keys()].sort(
+    (a, b) => levels[a] - levels[b]
+  );
+
+  rcm = sortedIndices.map((i, idx_i) =>
+    sortedIndices.map((j, idx_j) => {
+
+      if (idx_i === idx_j) return 0;
+
+      const lvl_i = levels[i];
+      const lvl_j = levels[j];
+
+      if (lvl_i <= lvl_j) return 0;
+      if (lvl_i - lvl_j !== 1) return 0;
+
+      return frm[i][j] === 1 ? 1 : 0;
+    })
+  );
+}
   const handleGoBack = () => {
     navigate(-1);
   };
@@ -115,7 +175,10 @@ export default function SmartISMResult() {
       {/* ================= DIGRAPH ================= */}
       {result?.frm && (
         <Section title="Digraph">
-          <Digraph frm={result.frm} variables={variables} />
+         <Digraph
+  rcm={rcm}
+  variables={sortedIndices.map(i => variables[i])}
+/>
         </Section>
       )}
 

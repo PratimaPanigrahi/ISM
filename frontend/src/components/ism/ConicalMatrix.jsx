@@ -60,18 +60,17 @@ export default function ConicalMatrices({ frm, variables }) {
 
   // ================= RCM =================
   const rcm = sortedIndices.map((i, idx_i) =>
-    sortedIndices.map((j, idx_j) => {
-      if (idx_i === idx_j) return 0;
+  sortedIndices.map((j, idx_j) => {
 
-      const lvl_i = levels[sortedIndices[idx_i]];
-      const lvl_j = levels[sortedIndices[idx_j]];
+    if (idx_i === idx_j) return 0;
 
-      if (lvl_i < lvl_j) return 0;
-      if (lvl_i - lvl_j > 1) return 0;
+    const lvl_i = levels[i];
+    const lvl_j = levels[j];
 
-      return frm[i][j];
-    })
-  );
+        // ✅ ONLY direct relation
+    return frm[i][j] === 1 ? 1 : 0;
+  })
+);
 
   return (
     <div className="space-y-10">

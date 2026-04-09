@@ -4,6 +4,12 @@ import { useLocation } from "react-router-dom";
 
 import VariableInput from "../components/ism/VariableInput";
 import SSIMGrid from "../components/ism/SSIMGrid";
+import {
+  calculateRMFromSSIM,
+  calculateFRM,
+  calculateLevelPartition,
+  generateConicalAndReduced
+} from "../utils/ismLogic";
 
 export default function SmartISMInput() {
   const navigate = useNavigate();
@@ -42,96 +48,59 @@ export default function SmartISMInput() {
     setGrid(updated);
   };
 
-  // ===============================
-  // 🔥 AUTO GENERATE ALL METHODS
-  // ===============================
-  const generateAll = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const generateAll = () => {
+  try {
+    setLoading(true);
+    setError("");
 
-      // 1️⃣ RM
-      const rmRes = await fetch("http://127.0.0.1:8000/calculate-rm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ grid }),
-      });
+    // 1️⃣ RM
+    const { rm, driving_power, dependence_power } =
+      calculateRMFromSSIM(grid);
 
-      const rmData = await rmRes.json();
+    // 2️⃣ FRM
+    const {
+      frm,
+      driving_power: frmDriving,
+      dependence_power: frmDependence
+    } = calculateFRM(rm);
 
-      // 2️⃣ FRM
-      const frmRes = await fetch("http://127.0.0.1:8000/calculate-frm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ rm: rmData.reachability_matrix }),
-      });
+    // 3️⃣ LEVEL
+    const elements = calculateLevelPartition(frm, variables);
 
-      const frmData = await frmRes.json();
+    // 4️⃣ CONICAL
+    const conicalResult = generateConicalAndReduced(frm, elements);
 
-      // 3️⃣ LEVEL
-      const levelRes = await fetch("http://127.0.0.1:8000/calculate-levels", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          frm: frmData.frm,
-          variables,
-        }),
-      });
+    // ✅ FINAL RESULT
+    const finalResult = {
+      rm,
+      rmDriving: driving_power,
+      rmDependence: dependence_power,
 
-      const levelData = await levelRes.json();
+      frm,
+      frmDriving,
+      frmDependence,
 
-      // 4️⃣ CONICAL
-      const conicalRes = await fetch("http://127.0.0.1:8000/calculate-conical", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          frm: frmData.frm,
-          elements: levelData.elements,
-        }),
-      });
+      levelTable: elements,
 
-      const conicalData = await conicalRes.json();
+      conical: conicalResult.conical,
+      reducedConical: conicalResult.reduced,
+    };
 
-      // ✅ FINAL RESULT
-      const finalResult = {
-        rm: rmData.reachability_matrix,
-        rmDriving: rmData.driving_power,
-        rmDependence: rmData.dependence_power,
+    // 🚀 NAVIGATE
+    navigate("/smart-ism/result", {
+      state: {
+        grid,
+        result: finalResult,
+      },
+    });
 
-        frm: frmData.frm,
-        frmDriving: frmData.driving_power,
-        frmDependence: frmData.dependence_power,
-
-        levelTable: levelData.elements,
-
-        conical: conicalData.conical_matrix,
-        reducedConical: conicalData.reduced_conical_matrix,
-      };
-
-      // 🚀 GO TO RESULT PAGE
-      navigate("/smart-ism/result", {
-        state: {
-          grid,
-          result: finalResult,
-        },
-      });
-
-    } catch (err) {
-      console.error(err);
-      setError("Error generating ISM");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  } catch (err) {
+    console.error(err);
+    setError("Error generating ISM");
+  } finally {
+    setLoading(false);
+  }
+};
   // ===============================
   // UI
   // ===============================

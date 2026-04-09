@@ -1,10 +1,10 @@
-export default function Digraph({ frm, variables }) {
-  if (!Array.isArray(frm)) return null;
+export default function Digraph({ rcm, variables }) {
+  if (!Array.isArray(rcm)) return null;
 
-  const n = frm.length;
+  const n = rcm.length;
 
   // ================= LEVEL LOGIC =================
-  function calculateLevels(frm) {
+  function calculateLevels(matrix) {
     let remaining = [...Array(n).keys()];
     let level = 1;
     let levels = Array(n).fill(0);
@@ -14,11 +14,11 @@ export default function Digraph({ frm, variables }) {
 
       for (let i of remaining) {
         const reach = remaining.filter(
-          j => frm[i][j] === 1 || frm[i][j] === "1*"
+          j => matrix[i][j] === 1 
         );
 
         const ante = remaining.filter(
-          j => frm[j][i] === 1 || frm[j][i] === "1*"
+          j => matrix[j][i] === 1 
         );
 
         const intersection = reach.filter(x => ante.includes(x));
@@ -39,7 +39,7 @@ export default function Digraph({ frm, variables }) {
     return levels;
   }
 
-  const levels = calculateLevels(frm);
+  const levels = calculateLevels(rcm);
 
   // ================= GROUP =================
   const grouped = {};
@@ -73,12 +73,12 @@ export default function Digraph({ frm, variables }) {
 
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
-      if (frm[i][j] === 1 || frm[i][j] === "1*") {
+      if (rcm[i][j] === 1 ) {
         const lvl_i = levels[i];
         const lvl_j = levels[j];
 
         // ✅ FIX: allow all upward links
-        if (lvl_i > lvl_j) {
+        if (lvl_i - lvl_j ==1) {
           links.push({ from: i, to: j });
         }
       }
